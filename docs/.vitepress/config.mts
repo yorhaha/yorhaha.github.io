@@ -19,6 +19,7 @@ export default defineConfig({
         items: [
           { text: 'ClusterKV', link: '/cluster-kv' },
           { text: 'MoBA', link: '/moba' },
+          { text: 'KIVI', link: '/kivi' },
         ]
       },
       {
