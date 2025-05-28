@@ -18,6 +18,7 @@ export default defineConfig({
         text: 'KVCache',
         items: [
           { text: 'ClusterKV', link: '/cluster-kv' },
+          { text: 'MoBA', link: '/moba' },
         ]
       },
       {
