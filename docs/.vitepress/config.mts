@@ -15,6 +15,12 @@ export default defineConfig({
     },
     sidebar: [
       {
+        text: 'KVCache',
+        items: [
+          { text: 'ClusterKV', link: '/cluster-kv' },
+        ]
+      },
+      {
         text: 'LLM',
         items: [
           { text: 'Qwen3', link: '/qwen3' },
@@ -51,9 +57,9 @@ export default defineConfig({
     //   permalink: markdownItAnchor.permalink.headerLink()
     // },
     toc: { level: [0, 1, 2] },
-    // anchor: {
-    //   level: [1, 2, 3],
-    // }
+    anchor: {
+      level: [1, 2, 3],
+    }
   },
   lastUpdated: true,
 })

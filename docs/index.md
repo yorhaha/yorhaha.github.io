@@ -7,12 +7,9 @@ hero:
   text: "Something about AI"
   # tagline: My great project tagline
   actions:
-    - theme: brand
-      text: Markdown Examples
-      link: /markdown-examples
     - theme: alt
-      text: API Examples
-      link: /api-examples
+      text: Blogs
+      link: /qwen3
 
 features:
   - title: LLM
