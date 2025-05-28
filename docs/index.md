@@ -3,9 +3,9 @@
 layout: home
 
 hero:
-  name: "yorhaha.github.io"
-  text: "yorhaha's blog"
-  tagline: My great project tagline
+  name: "yorhaha's blog"
+  text: "Something about AI"
+  # tagline: My great project tagline
   actions:
     - theme: brand
       text: Markdown Examples
@@ -15,11 +15,11 @@ hero:
       link: /api-examples
 
 features:
-  - title: Feature A
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature B
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature C
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  - title: LLM
+    # details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  - title: Agent
+    # details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  - title: LLM for Recommendation
+    # details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
 ---
 
