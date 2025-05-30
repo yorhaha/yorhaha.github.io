@@ -36,6 +36,7 @@ export default defineConfig({
         items: [
           { text: 'Qwen3', link: '/qwen3' },
           { text: 'DeepSeek V2', link: '/deepseek-v2' },
+          { text: 'RoPE', link: '/rope' },
         ]
       },
       {
