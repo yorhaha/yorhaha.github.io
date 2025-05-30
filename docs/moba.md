@@ -1,5 +1,5 @@
 ---
-MoBA
+title: MoBA
 ---
 
 # MoBA: Mixture of Block Attention for Long-Context LLMs
@@ -26,7 +26,7 @@ https://arxiv.org/abs/2502.13189
 4. **应用与效果**  
    - **部署应用**：已部署至Kimi，支持长上下文请求处理。  
    - **性能表现**：在长上下文任务中展现显著优势，验证了高效注意力计算方法的有效性。  
-   - **开源代码**：代码公开（https://github.com/MoonshotAI/MoBA），促进研究与应用。
+   - **开源代码**：代码公开（ https://github.com/MoonshotAI/MoBA ），促进研究与应用。
 
 ![image-20250528211435624](./public/image-20250528211435624.png)
 

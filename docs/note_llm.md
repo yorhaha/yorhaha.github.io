@@ -26,7 +26,7 @@ NoteLLM
    - **性能提升**：  
      1. 相比在线baseline，推荐系统效果显著提升。  
      2. 验证了LLM在压缩、对比学习与多任务生成中的协同作用。
-    
+   
 ## Introduction
 
 1. **研究背景与问题定义**  
@@ -78,7 +78,7 @@ NoteLLM
    - **NoteLLM多任务框架**：  
      1. 联合I2I推荐与标签生成，利用任务相似性（task similarity）提升协同效果。  
      2. 通过LLM生成能力强化物品表征学习（representation learning）。
-    
+   
 ## Problem Definition
 
 - **笔记池（note pool）**：定义为$\mathcal{N} = \{n_1, n_2, ..., n_m\}$，其中$m$为笔记总数。每个笔记$n_i = (t_i, tp_i, c_i, ct_i)$包含标题$t_i$、标签$tp_i$、类别$c_i$和内容$ct_i$。
@@ -102,14 +102,23 @@ NoteLLM
    - **作用**：基于生成的压缩词（compressed word）隐藏状态执行**对比学习**（contrastive learning），提取协同信号。
 4. **CSFT**（Collaborative Semantic Fine-Tuning）
    - **作用**：结合笔记的语义与协同信息，输出hashtag和category。
-  
+
+### Note Compression Prompt
+
+```
+[BOS]<Instruction> <Input Note> The compression word is:"[EMB]". <Output Guidance> <Output>[EOS]
+```
+
+![image-20250530111906438](./public/image-20250530111906438.png)
+
 ### Generative-Contrastive Learning
 
 1. **背景与动机**
+   
    - **传统LLM训练方法局限**：预训练LLM通过指令微调或RLHF增强语义能力，但推荐任务需协同信号（collaborative signals）辅助识别用户兴趣。
    - **协同信号缺失问题**：现有LLM未显式建模用户行为中的协同关系（如笔记共现模式）。
    - **GCL提出**：通过对比学习（contrastive learning）从全局视角建模笔记间关联性。
-
+   
 2. **协同信号建模**
    - **共现机制构建相关笔记对**：
      1. **假设基础**：频繁共同浏览的笔记具有潜在关联性。
@@ -131,3 +140,105 @@ NoteLLM
      - $\boldsymbol{n}_i^+$：其对应的正样本嵌入。
      - $sim(a, b) = \frac{a^\top b}{\|a\| \|b\|}$：余弦相似度。
      - $\tau$：可学习温度参数。
+
+### Collaborative Supervised Fine-Tuning
+
+1. **研究背景与动机**
+   - **LLM的应用现状**：现有工作将LLM用于句子嵌入生成，但忽视其生成能力，仅作为embedding生成工具。
+   - **关键问题**：
+     1. **未充分利用标签/分类**：hashtag/category作为笔记核心概念，其生成过程与note embedding目标本质一致（信息压缩与总结）。
+     2. **任务视角差异**：标签生成从文本生成视角提取关键信息，而embedding从协同视角压缩笔记用于I2I推荐。
+
+2. **NoteLLM框架设计**
+   - **核心思想**：联合建模GCL（General Contrastive Learning）和CSFT（Collaborative Supervised Fine-Tuning）任务，提升嵌入质量。
+   - **任务整合**：通过单一prompt统一两个任务，实现信息互补与训练流程简化。
+
+3. **CSFT任务实现**
+   - **输入构成**：结合笔记语义内容与压缩token中的协同信号（collaborative signals）。
+   - **训练优化策略**：
+     1. **动态任务分配**：每批次随机选取$r$个笔记执行标签生成任务，其余执行分类生成任务，避免遗忘问题。
+     2. **生成损失函数**：
+     $$
+       L_{gen} = -\frac{1}{T} \sum_{i=1}^{T} \log(p(o_i | o_{<i}, i))
+     $$
+       其中$o_i$为输出序列第$i$个token，$i$为输入序列。
+
+4. **NoteLLM总损失函数**
+   $$
+   L = \frac{L_{cl} + \alpha L_{gen}}{1 + \alpha}
+   $$
+   $L_{cl}$为对比学习损失，$\alpha$为平衡超参数。
+
+## Experiments
+
+### Dataset and Experiment Setting
+
+1. **Dataset Construction**  
+   - **数据来源**：Xiaohongshu产品数据集，包含500+类别。  
+   - **训练集构建**：基于一周产品数据，按类别组合固定数量笔记对提取。  
+   - **测试集构建**：从后续月份随机选择笔记构建测试池，排除训练集笔记。  
+   - **统计信息**：训练/测试集详细统计见表1，总笔记量超500类别。  
+
+2. **Experimental Setup**  
+   - **基础模型**：Meta LLaMA 2（LLM）。  
+   - **笔记对构建参数**：  
+     1. 共现分数上下限：$u=30$，$l=0.01$。  
+     2. 阈值 $t=10$。  
+   - **模型参数**：  
+     1. 笔记嵌入维度 $d=128$。  
+     2. 批量大小 $B=64$，每批含128笔记。  
+     3. 上下文长度限制：标题截断至20 tokens，内容截断至80 tokens。  
+     4. 温度初始化 $\tau=3$。  
+     5. $\alpha=0.01$。  
+     6. 标签生成任务比例 $r=40\%$。  
+
+3. **Evaluation Metrics**  
+   - **I2I推荐任务**：  
+     1. 提示设计：输入包含全部笔记信息的类别生成提示。  
+     2. 评估方法：以笔记对中第一篇为目标笔记，其余为真实标签；对测试池笔记（排除目标笔记）排序，计算Recall@100、Recall@1k、Recall@10k、Recall@100k。  
+   - **封闭类别生成任务**：  
+     1. 准确率（Acc.）。
+     2. 幻觉比例（Ill.）：生成类别中不在封闭类别库的比例。  
+   - **自由形式标签生成任务**：  
+     1. BLEU4、ROUGE1、ROUGE2、ROUGEL指标。
+
+### Offline Performance Evaluation
+
+1. **方法对比**
+   - **零样本方法**：
+     1. **zero-shot**：直接使用LLM生成嵌入向量进行检索
+     2. **PromptEOL**：添加显式单字限制提示的LLM句向量方法
+     3. **RepLLaMA**：基于LLM的无提示双编码器密集检索器
+   - **微调方法**：
+     1. **SentenceBERT**：基于BERT对比学习的笔记相似度模型
+     2. **PromptEOL+CSE**：结合单字提示与对比学习的LLM微调方法
+   - **对比维度**：是否使用提示工程、是否需要参数微调、模型架构差异
+
+2. **实验结果**
+   - **零样本方法局限性**：未超越微调方法性能，表明领域专业知识对推荐效果的重要性
+   - **LLM优势验证**：LLaMA 2相较SentenceBERT展现显著性能优势，证明大模型更强的笔记理解能力
+   - **提示工程效果**：PromptEOL+CSE与RepLLaMA表现相当，显示提示可提升零样本检索但微调后作用减弱
+   - **NoteLLM突破**：通过CSFT框架实现SOTA性能，关键指标如Recall@10达到$89.7\%$
+
+3. **核心发现**
+   - **领域知识价值**：微调方法通过注入特定领域知识获得性能提升
+   - **模型架构影响**：LLM的上下文建模能力优于传统BERT架构
+   - **提示双重性**：对零样本有效但存在边际效益递减现象
+   - **CSFT创新机制**：通过关键点压缩实现note embedding优化
+
+### Effect on Different Exposure Notes
+
+1. **数据划分与评估方法**
+   - **低曝光笔记**：曝光量低于$1,500$的笔记，占测试集$30\%$，但总曝光量仅占$0.5\%$。
+   - **高曝光笔记**：曝光量超过$75,000$的笔记，占测试集$10\%$，但总曝光量占比达$75\%$。
+   - **评估指标**：按两类笔记分别计算召回率（Recall），分析模型在不同曝光层级的表现差异。
+
+2. **实验结果分析**
+   - **NoteLLM性能优势**：在低/高曝光笔记上均优于其他方法，验证CSFT模块的有效性。
+   - **对比方法局限性**：
+     1. 对低曝光笔记表现良好，但处理高曝光笔记时性能显著下降。
+     2. 性能下降归因于未解决流行度偏差（popularity bias）问题（Lin et al., 2022）。
+
+3. **方法特性与应用价值**
+   - **内容驱动召回能力**：通过CSFT模块增强笔记内容与记忆的关联性，缓解冷启动问题。
+   - **实际意义**：提升新笔记的召回率可激励用户创作，形成内容生态正循环。

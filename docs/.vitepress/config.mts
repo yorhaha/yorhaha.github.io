@@ -15,11 +15,20 @@ export default defineConfig({
     },
     sidebar: [
       {
+        text: 'Development',
+        items: [
+          { text: 'Prompt', link: '/prompt' },
+          { text: 'Linux', link: '/linux' },
+          { text: 'LLM Inference', link: '/llm_inference' },
+        ]
+      },
+      {
         text: 'KVCache',
         items: [
           { text: 'ClusterKV', link: '/cluster-kv' },
           { text: 'MoBA', link: '/moba' },
           { text: 'KIVI', link: '/kivi' },
+          { text: 'Tensor Product Attention', link: '/tpa' },
         ]
       },
       {
@@ -34,6 +43,14 @@ export default defineConfig({
         items: [
           { text: 'AUC', link: '/auc' },
           { text: 'SiLU', link: '/silu' },
+        ]
+      },
+      {
+        text: 'LLM4REC',
+        items: [
+          { text: 'NoteLLM', link: '/note_llm' },
+          { text: 'InfoNCE', link: '/info_nce' },
+          { text: '[doing] GenIR survey', link: '/genir_survey' },
         ]
       }
     ],

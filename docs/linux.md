@@ -1,5 +1,5 @@
 ---
-Linux
+title: Linux
 ---
 
 # Linux初始化
