@@ -1,8 +1,10 @@
 ---
-title: From Matching to Generation
+title: GenIR survey
 ---
 
 # From Matching to Generation: A Survey on Generative Information Retrieval
+
+https://arxiv.org/pdf/2404.14851
 
 1. 引言
    - **传统信息检索 (Information Retrieval, IR) 系统**：依赖相似性匹配。

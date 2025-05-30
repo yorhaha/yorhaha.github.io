@@ -1,8 +1,10 @@
 ---
-NoteLLM
+title: NoteLLM
 ---
 
 # NoteLLM: A Retrievable Large Language Model for Note Recommendation
+
+https://arxiv.org/pdf/2403.01744
 
 ![](https://arxiv.org/html/2403.01744v2/x1.png)
 

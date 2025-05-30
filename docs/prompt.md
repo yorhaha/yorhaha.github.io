@@ -1,5 +1,5 @@
 ---
-Prompt
+title: Prompt
 ---
 
 # Prompt
