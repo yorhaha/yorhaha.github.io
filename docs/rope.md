@@ -8,6 +8,11 @@ https://arxiv.org/pdf/2104.09864
 
 https://spaces.ac.cn/archives/8265
 
+Code：
+
+- https://github.com/meta-llama/llama/blob/main/llama/model.py
+- https://github.com/meta-llama/llama3/blob/main/llama/model.py
+
 ## Introduction
 
 1. **研究背景与动机**  
@@ -62,7 +67,7 @@ Transformer 中的位置编码方法主要集中在选择合适的映射$f$。
 
 ## RoPE
 
-在Transformer中，自注意力机制通过**查询（Query）和键（Key）的内积**计算token之间的相关性。但原始的内积无法直接捕捉**相对位置信息**（例如"king - man + woman = queen"的类比关系）。因此，我们需要设计一种位置编码方法，使得：
+在Transformer中，自注意力机制通过查询（Query）和键（Key）的内积计算token之间的相关性。但原始的内积无法直接捕捉相对位置信息。因此，我们需要设计一种位置编码方法，使得：
 $$
 \langle f_q(x_m, m), f_k(x_n, n) \rangle = g(x_m, x_n, m-n)
 $$
@@ -75,9 +80,9 @@ RoPE通过**旋转词向量**来编码位置信息。具体来说：
 - 对不同位置的向量施加不同角度的旋转；
 - 旋转后的向量内积会自然包含位置差的信息。
 
-以最简单的二维向量为例（$d=2$），假设词向量$x = (x_1, x_2)$，我们可以将其视为复数$z = x_1 + x_2 i$。
-
 ### 定义旋转函数
+
+以最简单的二维向量为例（$d=2$），假设词向量$x = (x_1, x_2)$，我们可以将其视为复数$z = x_1 + x_2 i$。
 
 定义查询和键的旋转函数：
 $$
@@ -301,6 +306,9 @@ def reshape_for_broadcast(freqs_cis: torch.Tensor, x: torch.Tensor):
 
 复数相乘第一项：
 $$
-(x_1+ix_2)*(\cos\theta_1+i\sin\theta_1)=(x_1\cos\theta_1-x_2\sin\theta_1)+i(x_2\cos\theta_1+x_1\sin\theta_1)
+\begin{align}
+(x_1+ix_2)*\exp(im\theta_1)&=(x_1+ix_2)*(\cos m\theta_1+i\sin m\theta_1)\\
+&=(x_1\cos m\theta_1-x_2\sin m\theta_1)+i(x_2\cos m\theta_1+x_1\sin m\theta_1)
+\end{align}
 $$
 再通过`view_as_real`分解实部和虚部，正好就是所需要的前两项。

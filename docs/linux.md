@@ -47,7 +47,13 @@ plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
 
 uv：https://zhuanlan.zhihu.com/p/1894040611625084682
 
-镜像：
+uv 镜像：
+```bash
+UV_PYTHON_INSTALL_MIRROR=https://github.com/indygreg/python-build-standalone/releases/download uv python install 3.13.1
+export UV_DEFAULT_INDEX="https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
+```
+
+pip 镜像：
 - https://mirrors.tuna.tsinghua.edu.cn/help/pypi/
 - https://mirror.tuna.tsinghua.edu.cn/help/anaconda/
 
@@ -59,6 +65,35 @@ conda clean -t -y
 conda clean --all -y
 rm -rf ~/.cache/pip
 # C:\Users\username\AppData\Local\pip\cache
+```
+
+PyTorch: [Previous PyTorch Versions | PyTorch](https://pytorch.org/get-started/previous-versions/)
+
+Check torch version:
+
+```
+python -m torch.utils.collect_env
+```
+
+Check torch GPU:
+
+```python
+import torch
+
+if torch.cuda.is_available():
+    num_gpus = torch.cuda.device_count()
+    print(f"Number of available GPUs: {num_gpus}")
+    for i in range(num_gpus):
+        gpu_name = torch.cuda.get_device_name(i)
+        print(f"GPU {i}: {gpu_name}")
+else:
+    print("No GPUs available. PyTorch will run on CPU.")
+```
+
+Show real-time GPU memory:
+
+```
+watch -n 1 nvidia-smi
 ```
 
 ## ssh
