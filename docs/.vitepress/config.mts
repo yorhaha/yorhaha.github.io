@@ -29,6 +29,7 @@ export default defineConfig({
           { text: 'MoBA', link: '/moba' },
           { text: 'KIVI', link: '/kivi' },
           { text: 'Tensor Product Attention', link: '/tpa' },
+          { text: 'CAKE', link: '/cake' },
         ]
       },
       {
