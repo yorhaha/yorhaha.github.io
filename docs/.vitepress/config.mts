@@ -30,6 +30,7 @@ export default defineConfig({
           { text: 'KIVI', link: '/kivi' },
           { text: 'Tensor Product Attention', link: '/tpa' },
           { text: 'CAKE', link: '/cake' },
+          { text: 'OmniKV', link: '/omini-kv' },
         ]
       },
       {

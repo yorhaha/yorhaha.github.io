@@ -233,3 +233,34 @@ title: CAKE
         \hat{\mathbf{K}}_l = \mathbf{K}_l[\mathbf{D}_l, :], \quad \hat{\mathbf{V}}_l = \mathbf{V}_l[\mathbf{D}_l, :], \quad \mathbf{D}_l = \text{TopK}(\mathbf{I}_l, B_l),
         $$
         -   $\text{TopK}$ 函数：选取指标 $\mathbf{I}_l$ 中得分最高的 $B_l$ 个值的索引 $\mathbf{D}_l$。
+
+## Experiment
+
+### Ablation Studies
+
+1.  **所提分配策略的有效性 (Effectiveness of Proposed Allocation Strategy)**
+    *   **评估目标**：评估“偏好优先的自适应分配策略” (preference-prioritized adaptive allocation strategy) 的效果。
+    *   **对比的基线 (Baselines)**：
+        *   均匀分配 (Uniform allocation)
+        *   金字塔形分配 (Pyramid-shaped allocation)
+        *   随机分配 (Random allocation)
+    *   **实验观察**:
+        *   金字塔形分配优于均匀分配，但其有效性受场景限制。
+        *   随机分配在某些情况下优于均匀分配，这表明均匀分配策略过于保守，未能充分利用有限的内存预算。
+    *   **最终结果**：所提出的分配策略性能稳定地超越所有基线。
+    *   **性能优势原因**：该方法通过在空间和时间维度上捕捉复杂的、特定于层的注意力模式，从而全面地衡量了 KV cache 的偏好。
+
+2.  **所提驱逐指标的有效性 (Effectiveness of Proposed Eviction Indicator)**
+    *   **评估目标**：研究有效的驱逐指标，以识别对保持模型性能最关键的 token。
+    *   **对比的指标 (Metrics)**：
+        *   仅使用均值 (Mean only)
+        *   仅使用方差 (Variance only)
+        *   均值和方差的组合（乘法与加法）
+    *   **实验观察**:
+        *   与仅使用方差相比，通过均值注意力选择的 token 更有利于维持模型性能。
+        *   均值和方差的乘法组合效果略逊于单一指标。
+        *   均值和方差的加法组合取得了最佳的整体性能。
+    *   **结果分析**:
+        *   **均值注意力 (Mean attention)**：能有效捕捉具有长期重要性的 token，保留持续相关的信息。
+        *   **方差 (Variance)**：有助于识别变化最显著的位置，从而帮助维持注意力分布。
+        *   **加法组合**：最佳地平衡了均值和方差这两个方面，实现了更优的驱逐决策。
