@@ -4,6 +4,9 @@ title: OmniKV
 
 # OmniKV: Dynamic Context Selection for Efficient Long-Context LLMs
 
+> [!NOTE]
+> 文章的大致意思很清晰，但是图和写作都非常令我迷惑。
+
 1.  **引言与背景**
     *   **问题陈述**：在长上下文的大语言模型（LLM）推理阶段，KV cache 占用了大量 GPU 内存，并且其内存占用随序列长度的增长而增加。
     *   **现有方法的局限性**：
@@ -41,7 +44,7 @@ title: OmniKV
 - **工作流程**:
   - **Prefill 阶段 (处理输入)**:
     1. 将**大部分层**的 KV cache 卸载 (offload) 到 CPU 内存。
-    2. 在 GPU 中完整保留少数**“过滤器” (filter) 层**的 KV cache。
+    2. 在 GPU 中完整保留少数**过滤器 (filter) 层**的 KV cache。
   - **Decode 阶段 (生成新 token)**:
     1. 首先，利用“过滤器”层中的注意力稀疏性，通过 top-k 算法选出得分最高的少数 token。
     2. 接着，其他层直接使用这个由“过滤器”层选出的 token 子集作为上下文进行注意力计算。
@@ -78,7 +81,7 @@ title: OmniKV
 
 3.  **LLM 中的稀疏性 (Sparsity in LLMs)**
     *   **核心观察**：在长上下文场景中，注意力是稀疏的。例如，Minference 研究表明，在 128k 上下文中，仅需 4k token 即可累积 96.4% 的总注意力分数。
-    *   **关键挑战**：稀疏模式是**动态 (dynamic)**的，随生成迭代而变化。这似乎意味着需要在每一层、每一次迭代中都计算完整的注意力。
+    *   **关键挑战**：稀疏模式是dynamic的，随生成迭代而变化。这似乎意味着需要在每一层、每一次迭代中都计算完整的注意力。
     *   **现有应对策略**：
         *   **近似注意力**：Quest 和 SparQ 使用近似注意力方法来规避高昂的完整注意力计算。
         *   **跨层相似性**：Infini-Gen 利用**连续两层**之间的相似性来预选关键 KV cache，但其加载时间仍可能超过计算时间，导致 GPU 空闲。
@@ -86,6 +89,27 @@ title: OmniKV
         *   **新发现**：不仅是连续层，**不同层之间**的稀疏模式也表现出高度相似性。
         *   **本文方法**：仅计算少数几层的完整注意力，然后利用其稀疏模式来指导后续层，从而节省计算。
         *   **独创性**：本文是第一个强调并利用这一发现的研究。
+
+## Insights
+
+1.  **层内注意力稀疏性 (Intra-Layer Attention Sparsity)**
+    *   **核心特性**: LLM层内的注意力矩阵是稀疏的，这意味着模型只需关注一小部分token子集，就能生成几乎等效的输出。
+    *   **应用价值**: 此特性已被用于提升推理速度或减少GPU内存占用。
+    *   **OmniKV的应用**: OmniKV利用此特性，在大多数层中仅使用一小部分token，从而同时减少了计算量和CPU与GPU之间的通信量。
+
+2.  **层间注意力相似性 (Inter-Layer Attention Similarity)**
+    *   **概念定义**: 在特定层中获得高注意力的一个固定token子集，在后续连续的多层中会持续保持其重要性。
+    *   **“过滤器”能力 (Filter Ability)**: 层的相似性值可视为该层的“过滤器”能力。其计算方式为：一个固定的token子集在后续层中注意力分数的总和的平均值。
+    *   **实验观察**: 经过一定数量的浅层网络后，某一层与后续n层的相似性会变得非常高。
+    *   **“过滤器”层 (Filter Layers)**: 部分层展现出比其他层更强的“过滤器”能力。
+    *   **OmniKV的应用**: 这些“过滤器”层在OmniKV中充当上下文选择器，为每个生成迭代识别关键token，从而为后续层实现稀疏注意力提供基础。
+
+3.  **Token间注意力可变性 (Inter-Token Attention Variability)**
+    *   **核心直觉**: 在LLM的生成过程中，重要的token集合是动态变化的，尤其是在多任务或多步推理场景（如CoT）中。
+    *   **实例观察**: 在一个多跳（multi-hop）问题的CoT场景中，两个不同解码步骤中注意力得分最高的token集合（除BOS token外）是完全不同的。
+    *   **实验验证**: 在Multi-Hop QA任务上的研究表明，在每个生成步骤中，一些在预填充阶段未被识别为关键的token（即不在最重要的25% token集合中），后续会获得非常高的注意力分数。
+    *   **结论**: 关键token的子集在不同生成步骤之间存在显著波动。
+    *   **对OmniKV的启发**: 基于此洞察，OmniKV选择保留完整的KV cache，以确保模型性能不受影响。
 
 ## Method
 
@@ -166,16 +190,22 @@ title: OmniKV
         *   使用局部窗口 $\mathbf{h}_i^w$ 作为 query 状态，完整上下文 $\mathbf{h}_i^c$ 作为 key 状态。
         *   计算 query $\mathbf{Q}_i = \mathbf{W}_i^q \mathbf{h}_i^w$ 和 key $\mathbf{K}_i = \mathbf{W}_i^k \mathbf{h}_i^c$。
         *   通过以下公式计算注意力分数 $\mathbf{A}_i$：
-            $ \mathbf{A}_i = \text{Softmax}\left(\frac{\mathbf{Q}_i \mathbf{K}_i^\top}{\sqrt{d}}\right) $
+            $$
+            \mathbf{A}_i = \text{Softmax}\left(\frac{\mathbf{Q}_i \mathbf{K}_i^\top}{\sqrt{d}}\right)
+            $$
     *   **第二步：计算聚合分数（Score Vector）**
         *   首先，对所有 attention heads 应用 `reduce-max` 操作，获得每个 token 的最大注意力分数。
         *   然后，使用一个权重向量 $\alpha$ 对上述分数进行加权求和，得到最终的分数向量 $\mathbf{S}_i$。
         *   计算公式为：
-            $ \mathbf{S}_i = \sum_{j=0}^{|\mathbf{h}_i^w|-1} \alpha_j \max_{0 \leq h < H} \mathbf{A}_i[h, j] $
+            $$
+            \mathbf{S}_i = \sum_{j=0}^{|\mathbf{h}_i^w|-1} \alpha_j \max_{0 \leq h < H} \mathbf{A}_i[h, j]
+            $$
     *   **第三步：识别重要 Tokens**
         *   利用 `topk` 函数在分数向量 $\mathbf{S}_i$ 上选出得分最高的 $k$ 个 tokens 作为重要 tokens $\mathbf{T}_i$。
         *   计算公式为：
-            $ \mathbf{T}_i = \arg \text{top } k(\mathbf{S}_i) $
+            $$
+            \mathbf{T}_i = \arg \text{top } k(\mathbf{S}_i)
+            $$
 
 3.  **权重向量 $\alpha$ 的探索**
     *   **研究目的**：探究观察窗口中的哪些 tokens 具有更强的“过滤”能力来识别重要 tokens $\mathbf{T}$。
