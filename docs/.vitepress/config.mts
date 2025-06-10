@@ -31,6 +31,7 @@ export default defineConfig({
           { text: 'Tensor Product Attention', link: '/tpa' },
           { text: 'CAKE', link: '/cake' },
           { text: 'OmniKV', link: '/omini-kv' },
+          { text: 'Ada-KV', link: '/ada-kv' },
         ]
       },
       {
